@@ -14,14 +14,15 @@ games = {"1": None}
 client = commands.Bot(
     command_prefix="!"
 )  #put your own prefix here, but it wont matter since slash commands default to /
+
 slash = SlashCommand(client, sync_commands=True)
 
 
 @client.event
 async def on_ready():
-    await client.change_presence(
-        status=discord.Status.online, activity=discord.Game(name='Chess')
-    )  #Bot status, change this to anything you like
+    await client.change_presence(status=discord.Status.online,
+                                 activity=discord.Game(name='Chess')
+                                 )  # Bot status
     print("Bot online"
           )  #will print "bot online" in the console when the bot is online
 
