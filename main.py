@@ -2,13 +2,22 @@ from keep_alive import keep_alive
 import discord
 import discord.ext
 from discord.ext import commands
+
 from discord_slash import SlashCommand
 from discord_slash import SlashContext
 from ch import ChessGame
-from utils.send_game import send_game
+from svglib.svglib import svg2rlg
 
-#Define our bot
+# define our bot
 client = discord.Client()
+
+# define the dict for the games
+# struct example:
+# games: {
+#   "user1id": ChessGame Object
+#   "user2id": ChessGame Object
+# }
+
 games = {"1": None}
 
 client = commands.Bot(
@@ -17,34 +26,52 @@ client = commands.Bot(
 
 slash = SlashCommand(client, sync_commands=True)
 
+def game_viewer():
+    from PIL import Image
+    import svglib
+    import io
+
+    svg_data = open('games/chess5.svg', 'rb').read()
+    svg_img = svglib.svglib.svg2rlg(io.BytesIO(svg_data))
+
+    from reportlab.graphics import renderPM
+    pil_img = renderPM.drawToPIL(svg_img)
+    png_bytes = io.BytesIO()
+    pil_img.save(png_bytes, format='PNG')
+    png_bytes.seek(0)
+    return discord.File(png_bytes, filename='image.png')
 
 @client.event
 async def on_ready():
-    await client.change_presence(status=discord.Status.online,
-                                 activity=discord.Game(name='Chess')
-                                 )  # Bot status
-    print("Bot online"
-          )  #will print "bot online" in the console when the bot is online
+    await client.change_presence(
+        status=discord.Status.online,
+        activity=discord.Game(name='Chess')
+    )
+    print("Bot online")  
 
 
 @slash.slash(name="start", description="start new chess game")
 async def start_game(ctx: SlashContext):
-    await ctx.send("Starting a new game...")
     games["1"] = ChessGame()
-    await ctx.send(file=send_game())
-
+    await ctx.send(file=game_viewer())
+    
 
 @slash.slash(name="play", description="send user's current game")
 async def play(ctx: SlashContext, move: str):
-    games["1"].board.push_san("e4")
+    print(games)
+    games["1"].board.push_san(move)
     await ctx.send("move played")
-    games["1"].render_game()
+    
     games["1"].play()
-    await ctx.send(file=send_game())
+    games["1"].render_game()
 
+    await ctx.send(file=game_viewer())
+    
 
-#Run our webserver, this is what we will ping
-keep_alive()
+# for now no need to run the bot in the backend
+
+# #Run our webserver, this is what we will ping
+# keep_alive()
 
 #Run our bot
 client.run(
